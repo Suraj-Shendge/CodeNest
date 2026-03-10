@@ -18,3 +18,29 @@ model User {
   submissions   Submission[]
   // optional: follower/following (self‑relation) can be added later
 }
+model Problem {
+  id          String   @id @default(cuid())
+  title       String
+  description String   @db.Text
+  difficulty  Difficulty
+  tags        String[] // array of strings (PostgreSQL native)
+  testCases   TestCase[]
+  createdBy   User      @relation(fields: [createdById], references: [id])
+  createdById String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model TestCase {
+  id        String   @id @default(cuid())
+  input     String   @db.Text
+  output    String   @db.Text
+  problem   Problem  @relation(fields: [problemId], references: [id])
+  problemId String
+}
+
+enum Difficulty {
+  Easy
+  Medium
+  Hard
+}
