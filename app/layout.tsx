@@ -1,18 +1,11 @@
-'use client';
 import "../styles/globals.css";
 import { Metadata } from "next";
-import { ThemeProvider, createTheme } from "@mui/material/styles";
-import { CssBaseline, Container } from "@mui/material";
 import Providers from "./Providers";
 
 export const metadata: Metadata = {
   title: "Modern LeetCode",
   description: "Interactive coding challenges with animations",
 };
-
-const darkTheme = createTheme({
-  palette: { mode: "dark" },
-});
 
 export default function RootLayout({
   children,
@@ -23,12 +16,8 @@ export default function RootLayout({
     <html lang="en">
       <head />
       <body>
-        <ThemeProvider theme={darkTheme}>
-          <CssBaseline />
-          <Container maxWidth="lg" sx={{ py: 4 }}>
-            <Providers>{children}</Providers>
-          </Container>
-        </ThemeProvider>
+        {/* All client‑side UI (theme, container, page‑transitions) lives in Providers */}
+        <Providers>{children}</Providers>
       </body>
     </html>
   );
