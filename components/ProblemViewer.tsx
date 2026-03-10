@@ -43,33 +43,46 @@ export default function ProblemViewer({
   } | null>(null);
 
   const handleSubmit = async () => {
-    setSubmitting(true);
-    setResult(null);
-    try {
-      const exec = await submitCode({
+  setSubmitting(true);
+  setResult(null);
+  try {
+    const { submissionId } = await fetch("/api/submissions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        problemId: problem.id,
         language,
         source: code,
-        stdin: problem.testCases[0].input,
-      });
+      }),
+    }).then((r) => r.json());
 
-      const passed =
-        exec.stdout.trim() === problem.testCases[0].output.trim();
+    // -------------------------------------------------
+    // **Polling** – every 1 s we ask the server for the latest status.
+    // A more production‑ready solution would be SSE/WS.
+    // -------------------------------------------------
+    const poll = async () => {
+      const data = await fetch(`/api/submissions/${submissionId}`).then((r) => r.json());
 
-      setResult({
-        passed,
-        stdout: exec.stdout,
-        exitCode: exec.exitCode,
-      });
+      if (data.status === "FINISHED") {
+        setResult({
+          passed: data.verdict === "Accepted",
+          stdout: data.output ?? "",
+          exitCode: data.runtimeMs ?? 0,
+        });
+        setSubmitting(false);
+      } else {
+        // still pending/running → keep polling
+        setTimeout(poll, 800);
+      }
+    };
+    poll();
+  } catch (e) {
+    console.error(e);
+    toast.error("Submission failed");
+    setSubmitting(false);
+  }
+};
 
-      if (passed) toast.success("All test cases passed!");
-      else toast.error("Wrong answer – keep trying!");
-    } catch (e: any) {
-      console.error(e);
-      toast.error("Submission failed");
-    } finally {
-      setSubmitting(false);
-    }
-  };
 
   const difficultyColor = {
     Easy: "success.main",
