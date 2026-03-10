@@ -1,9 +1,12 @@
-"use client";
+'use client';
 
-import { useEffect, useRef } from "react";
-import * as monaco from "monaco-editor";
+import { useEffect, useRef, useState } from "react";
 import { Box, CircularProgress } from "@mui/material";
 
+/**
+ * Client‑only code editor that loads Monaco *after* the component mounts.
+ * This prevents `window is not defined` during the server‑side build.
+ */
 export default function CodeEditor({
   language,
   code,
@@ -14,35 +17,49 @@ export default function CodeEditor({
   onChange: (value: string) => void;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
+  const editorRef = useRef<any>(null);
+  const [monacoReady, setMonacoReady] = useState(false);
 
-  // Load monaco only on the client
   useEffect(() => {
     if (!containerRef.current) return;
 
-    // Initialize once
-    if (!editorRef.current) {
-      editorRef.current = monaco.editor.create(containerRef.current, {
-        value: code,
-        language,
-        theme: "vs-dark",
-        automaticLayout: true,
-        minimap: { enabled: false },
-        lineNumbers: "on",
-        scrollBeyondLastLine: false,
-      });
+    // Dynamically import Monaco – runs only in the browser
+    import("monaco-editor")
+      .then((monaco) => {
+        // Create the editor only once
+        if (!editorRef.current) {
+          editorRef.current = monaco.editor.create(containerRef.current!, {
+            value: code,
+            language,
+            theme: "vs-dark",
+            automaticLayout: true,
+            minimap: { enabled: false },
+            lineNumbers: "on",
+            scrollBeyondLastLine: false,
+          });
 
-      editorRef.current.onDidChangeModelContent(() => {
-        const val = editorRef.current?.getValue() ?? "";
-        onChange(val);
+          // Keep the parent component in sync when the user types
+          editorRef.current.onDidChangeModelContent(() => {
+            const newValue = editorRef.current?.getValue() ?? "";
+            if (newValue !== code) {
+              onChange(newValue);
+            }
+          });
+        } else {
+          // Update language or content when props change
+          monaco.editor.setModelLanguage(
+            editorRef.current.getModel(),
+            language
+          );
+          if (code !== editorRef.current.getValue()) {
+            editorRef.current.setValue(code);
+          }
+        }
+        setMonacoReady(true);
+      })
+      .catch((err) => {
+        console.error("Failed to load Monaco:", err);
       });
-    } else {
-      // Change language / content if props change
-      monaco.editor.setModelLanguage(editorRef.current.getModel()!, language);
-      if (code !== editorRef.current.getValue()) {
-        editorRef.current.setValue(code);
-      }
-    }
   }, [language, code, onChange]);
 
   return (
@@ -56,8 +73,9 @@ export default function CodeEditor({
       }}
     >
       <div ref={containerRef} style={{ width: "100%", height: "100%" }} />
-      {/* Fallback loader */}
-      {!editorRef.current && (
+
+      {/* Show a spinner until Monaco has been loaded */}
+      {!monacoReady && (
         <Box
           sx={{
             position: "absolute",
@@ -74,4 +92,3 @@ export default function CodeEditor({
     </Box>
   );
 }
-
