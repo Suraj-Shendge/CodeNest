@@ -1,6 +1,19 @@
 'use client';
 import { useSession, signOut } from "next-auth/react";
 import { Box, Avatar, Typography, Button } from "@mui/material";
+import { signIn, useSession } from "next-auth/react";
+import { Button } from "@mui/material";
+
+export default function SignInButton() {
+  const { data: session } = useSession();
+
+  if (session) return null;
+
+  return (
+    <Button onClick={() => signIn()} variant="contained">
+      Sign In
+    </Button>
+  );
 
 export default function Profile() {
   const { data: session, status } = useSession();
