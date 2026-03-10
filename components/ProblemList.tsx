@@ -2,14 +2,23 @@
 
 import { useEffect, useState } from "react";
 import ProblemCard from "./ProblemCard";
-import { Problem } from "./ProblemCard";
+import { Box, CircularProgress } from "@mui/material";
 
-const ProblemList = () => {
+/* ---------- EXPORT THE PROBLEM TYPE ---------- */
+export type Problem = {
+  id: string;
+  title: string;
+  description: string;
+  difficulty: "Easy" | "Medium" | "Hard";
+  tags: string[];
+  testCases: { input: string; output: string }[];
+};
+
+/* ------------------------------------------------ */
+export default function ProblemList() {
   const [problems, setProblems] = useState<Problem[]>([]);
 
   useEffect(() => {
-    // In a real app you’d fetch from an API.
-    // Here we just import a static JSON.
     import("@/data/problems.json").then((module) => setProblems(module.default));
   }, []);
 
@@ -26,7 +35,4 @@ const ProblemList = () => {
       ))}
     </div>
   );
-};
-
-export default ProblemList;
-
+}
