@@ -54,4 +54,23 @@ export async function POST(req: Request) {
 
   // Respond immediately with the submission id (client will poll)
   return NextResponse.json({ submissionId: sub.id });
+
+export async function GET(req: Request) {
+  const url = new URL(req.url);
+  const problemId = url.searchParams.get("problemId");
+  const userId = (req as any).auth?.user?.id; // auth guard needed later
+
+  const subs = await prisma.submission.findMany({
+    where: { problemId: problemId ?? undefined, userId },
+    orderBy: { createdAt: "desc" },
+    select: {
+      id: true,
+      language: true,
+      status: true,
+      verdict: true,
+      runtimeMs: true,
+      createdAt: true,
+    },
+  });
+  return NextResponse.json(subs);
 }
