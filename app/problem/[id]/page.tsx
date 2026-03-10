@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import ProblemViewer from "@/components/ProblemViewer";
 import problems from "@/data/problems.json";
-import { Problem } from "@/components/ProblemList";
+import type { Problem } from "@/components/ProblemList";
 
 export async function generateStaticParams() {
   // Enable static generation for each problem at build time
