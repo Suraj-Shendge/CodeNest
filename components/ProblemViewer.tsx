@@ -1,15 +1,23 @@
 'use client';
 
 import { useState } from "react";
-import { Box, Button, Chip, Typography } from "@mui/material";
+import {
+  Box,
+  Button,
+  Chip,
+  Typography,
+} from "@mui/material";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import CodeEditor from "./CodeEditor";
 import { submitCode } from "@/lib/api";
 import SubmissionResult from "./SubmissionResult";
-import { toast } from "react-hot-toast";
 import SubmissionHistory from "./SubmissionHistory";
+import { toast } from "react-hot-toast";
 
+/* -----------------------------------------------------------------
+   Props type – mirrors the shape you store in the DB.
+----------------------------------------------------------------- */
 export interface ProblemViewerProps {
   problem: {
     id: string;
@@ -21,14 +29,18 @@ export interface ProblemViewerProps {
   };
 }
 
-/* ---------- helper: map difficulty → default language ---------- */
+/* -----------------------------------------------------------------
+   Helper: map difficulty → default language for the demo UI.
+----------------------------------------------------------------- */
 const languageMap: Record<string, string> = {
   Easy: "python",
   Medium: "javascript",
   Hard: "cpp",
 };
-/* ------------------------------------------------------------ */
 
+/* -----------------------------------------------------------------
+   Main component – client‑side (needs hooks & Monaco).
+----------------------------------------------------------------- */
 export default function ProblemViewer({
   problem,
 }: {
@@ -43,47 +55,37 @@ export default function ProblemViewer({
     exitCode: number;
   } | null>(null);
 
+  /** -----------------------------------------------------------------
+   *  Submit handler – talks to our thin wrapper (`/api/submissions`)
+   * ----------------------------------------------------------------- */
   const handleSubmit = async () => {
-  setSubmitting(true);
-  setResult(null);
-  try {
-    const { submissionId } = await fetch("/api/submissions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        problemId: problem.id,
+    setSubmitting(true);
+    setResult(null);
+    try {
+      const exec = await submitCode({
         language,
         source: code,
-      }),
-    }).then((r) => r.json());
+        stdin: problem.testCases[0].input,
+      });
 
-    // -------------------------------------------------
-    // **Polling** – every 1 s we ask the server for the latest status.
-    // A more production‑ready solution would be SSE/WS.
-    // -------------------------------------------------
-    const poll = async () => {
-      const data = await fetch(`/api/submissions/${submissionId}`).then((r) => r.json());
+      const passed =
+        exec.stdout.trim() === problem.testCases[0].output.trim();
 
-      if (data.status === "FINISHED") {
-        setResult({
-          passed: data.verdict === "Accepted",
-          stdout: data.output ?? "",
-          exitCode: data.runtimeMs ?? 0,
-        });
-        setSubmitting(false);
-      } else {
-        // still pending/running → keep polling
-        setTimeout(poll, 800);
-      }
-    };
-    poll();
-  } catch (e) {
-    console.error(e);
-    toast.error("Submission failed");
-    setSubmitting(false);
-  }
-};
+      setResult({
+        passed,
+        stdout: exec.stdout,
+        exitCode: exec.exitCode,
+      });
 
+      if (passed) toast.success("All test cases passed!");
+      else toast.error("Wrong answer – keep trying!");
+    } catch (e: any) {
+      console.error(e);
+      toast.error("Submission failed");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   const difficultyColor = {
     Easy: "success.main",
@@ -93,6 +95,7 @@ export default function ProblemViewer({
 
   return (
     <Box>
+      {/* ------------------ Header ------------------ */}
       <Typography variant="h4" gutterBottom>
         {problem.title}
       </Typography>
@@ -108,14 +111,14 @@ export default function ProblemViewer({
         <Chip key={t} label={t} variant="outlined" sx={{ mr: 0.5 }} />
       ))}
 
-      {/* description */}
+      {/* ------------------ Description ------------------ */}
       <Box sx={{ my: 2 }}>
         <ReactMarkdown remarkPlugins={[remarkGfm]}>
           {problem.description}
         </ReactMarkdown>
       </Box>
 
-      {/* sample I/O */}
+      {/* ------------------ Sample I/O ------------------ */}
       <Box sx={{ my: 2 }}>
         <Typography variant="subtitle1" gutterBottom>
           Sample Input
@@ -148,12 +151,12 @@ export default function ProblemViewer({
         </Box>
       </Box>
 
-      {/* editor */}
+      {/* ------------------ Editor ------------------ */}
       <Box sx={{ mt: 3 }}>
         <CodeEditor language={language} code={code} onChange={setCode} />
       </Box>
 
-      {/* run button */}
+      {/* ------------------ Run button ------------------ */}
       <Box sx={{ mt: 2, display: "flex", justifyContent: "flex-end" }}>
         <Button
           variant="contained"
@@ -165,13 +168,18 @@ export default function ProblemViewer({
         </Button>
       </Box>
 
-      {/* result */}
+      {/* ------------------ Result (confetti etc.) ------------------ */}
       {result && <SubmissionResult result={result} />}
+
+      {/* ------------------ Past submissions for this problem ------------------ */}
+      <SubmissionHistory problemId={problem.id} />
     </Box>
   );
 }
 
-/* ---------- tiny starter templates ---------- */
+/* -----------------------------------------------------------------
+   Tiny starter templates – you can replace with anything you like.
+----------------------------------------------------------------- */
 function defaultTemplate(lang: string): string {
   switch (lang) {
     case "python":
@@ -191,6 +199,3 @@ int main() {
       return "";
   }
 }
-/* ... inside return */
-{result && <SubmissionResult result={result} />}
-<SubmissionHistory problemId={problem.id} />
