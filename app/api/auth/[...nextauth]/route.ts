@@ -6,7 +6,10 @@ import EmailProvider from "next-auth/providers/email";
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
 
-export const authOptions = {
+/* -------------------------------------------------------------
+   1️⃣  Define the Next‑Auth options – **do NOT export them**.
+   ------------------------------------------------------------- */
+const authOptions = {
   adapter: PrismaAdapter(prisma),
   providers: [
     GoogleProvider({
@@ -25,10 +28,9 @@ export const authOptions = {
   secret: process.env.NEXTAUTH_SECRET,
   callbacks: {
     async session({ session, user }) {
-      // expose the user id to the client
-      // @ts-ignore – we add a custom field
+      // expose the DB id (and premium flag) to the client side
+      // @ts-ignore – we add custom fields to the session object
       session.user.id = user.id;
-      // also expose premium flag for UI gating
       // @ts-ignore
       session.user.premium = user.premium;
       return session;
@@ -36,6 +38,8 @@ export const authOptions = {
   },
 };
 
-// Next‑Auth’s App‑Router syntax: export GET & POST that delegate to the handler
-export const GET = NextAuth(authOptions);
-export const POST = GET;
+/* -------------------------------------------------------------
+   2️⃣  Create the handler once and re‑export it as GET & POST
+   ------------------------------------------------------------- */
+const handler = NextAuth(authOptions);
+export { handler as GET, handler as POST };
