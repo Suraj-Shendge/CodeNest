@@ -8,6 +8,7 @@ import CodeEditor from "./CodeEditor";
 import { submitCode } from "@/lib/api";
 import SubmissionResult from "./SubmissionResult";
 import { toast } from "react-hot-toast";
+import SubmissionHistory from "./SubmissionHistory";
 
 export interface ProblemViewerProps {
   problem: {
@@ -190,3 +191,6 @@ int main() {
       return "";
   }
 }
+/* ... inside return */
+{result && <SubmissionResult result={result} />}
+<SubmissionHistory problemId={problem.id} />
