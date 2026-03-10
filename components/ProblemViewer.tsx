@@ -1,13 +1,7 @@
-"use client";
+'use client';
 
 import { useState } from "react";
-import {
-  Box,
-  Button,
-  Chip,
-  Divider,
-  Typography,
-} from "@mui/material";
+import { Box, Button, Chip, Typography } from "@mui/material";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import CodeEditor from "./CodeEditor";
@@ -26,14 +20,13 @@ export interface ProblemViewerProps {
   };
 }
 
-/**
- * Helper: map difficulty → default language for the demo
- */
+/* ---------- helper: map difficulty → default language ---------- */
 const languageMap: Record<string, string> = {
   Easy: "python",
   Medium: "javascript",
   Hard: "cpp",
 };
+/* ------------------------------------------------------------ */
 
 export default function ProblemViewer({
   problem,
@@ -56,8 +49,9 @@ export default function ProblemViewer({
       const exec = await submitCode({
         language,
         source: code,
-        stdin: problem.testCases[0].input, // use first test case as sample
+        stdin: problem.testCases[0].input,
       });
+
       const passed =
         exec.stdout.trim() === problem.testCases[0].output.trim();
 
@@ -100,14 +94,15 @@ export default function ProblemViewer({
         <Chip key={t} label={t} variant="outlined" sx={{ mr: 0.5 }} />
       ))}
 
-      <Divider sx={{ my: 2 }} />
+      {/* description */}
+      <Box sx={{ my: 2 }}>
+        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+          {problem.description}
+        </ReactMarkdown>
+      </Box>
 
-      <ReactMarkdown remarkPlugins={[remarkGfm]}>
-        {problem.description}
-      </ReactMarkdown>
-
-      {/* Sample I/O */}
-      <Box sx={{ mt: 2 }}>
+      {/* sample I/O */}
+      <Box sx={{ my: 2 }}>
         <Typography variant="subtitle1" gutterBottom>
           Sample Input
         </Typography>
@@ -117,6 +112,7 @@ export default function ProblemViewer({
             bgcolor: "grey.100",
             p: 1,
             borderRadius: 1,
+            whiteSpace: "pre-wrap",
           }}
         >
           {problem.testCases[0].input}
@@ -131,18 +127,19 @@ export default function ProblemViewer({
             bgcolor: "grey.100",
             p: 1,
             borderRadius: 1,
+            whiteSpace: "pre-wrap",
           }}
         >
           {problem.testCases[0].output}
         </Box>
       </Box>
 
-      {/* Editor */}
+      {/* editor */}
       <Box sx={{ mt: 3 }}>
         <CodeEditor language={language} code={code} onChange={setCode} />
       </Box>
 
-      {/* Run button */}
+      {/* run button */}
       <Box sx={{ mt: 2, display: "flex", justifyContent: "flex-end" }}>
         <Button
           variant="contained"
@@ -154,15 +151,13 @@ export default function ProblemViewer({
         </Button>
       </Box>
 
-      {/* Result */}
+      {/* result */}
       {result && <SubmissionResult result={result} />}
     </Box>
   );
 }
 
-/**
- * Small starter templates – you can replace with anything.
- */
+/* ---------- tiny starter templates ---------- */
 function defaultTemplate(lang: string): string {
   switch (lang) {
     case "python":
@@ -182,4 +177,3 @@ int main() {
       return "";
   }
 }
-
