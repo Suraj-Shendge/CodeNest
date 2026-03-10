@@ -1,3 +1,4 @@
+'use client';
 import "../styles/globals.css";
 import { Metadata } from "next";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
@@ -6,13 +7,11 @@ import Providers from "./Providers";
 
 export const metadata: Metadata = {
   title: "Modern LeetCode",
-  description: "Interactive coding challenges with smooth animations",
+  description: "Interactive coding challenges with animations",
 };
 
 const darkTheme = createTheme({
-  palette: {
-    mode: "dark",
-  },
+  palette: { mode: "dark" },
 });
 
 export default function RootLayout({
@@ -34,4 +33,3 @@ export default function RootLayout({
     </html>
   );
 }
-
