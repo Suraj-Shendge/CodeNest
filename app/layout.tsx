@@ -1,23 +1,15 @@
-import "../styles/globals.css";
-import { Metadata } from "next";
+import { SessionProvider } from "next-auth/react";
 import Providers from "./Providers";
+import "../styles/globals.css";
 
-export const metadata: Metadata = {
-  title: "Modern LeetCode",
-  description: "Interactive coding challenges with animations",
-};
-
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <head />
       <body>
-        {/* All client‑side UI (theme, container, page‑transitions) lives in Providers */}
-        <Providers>{children}</Providers>
+        <SessionProvider>
+          <Providers>{children}</Providers>
+        </SessionProvider>
       </body>
     </html>
   );
