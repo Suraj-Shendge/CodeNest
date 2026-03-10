@@ -27,7 +27,7 @@
     "remark-gfm": "^4.0.0",
     "remark-math": "^5.1.1",
     "rehype-katex": "^6.0.0",
-    "katex": "^0.16.10"
+    "katex": "^0.16.10",
     "next-auth": "^4.24.7",
     "@next-auth/prisma-adapter": "^1.0.5"
   },
