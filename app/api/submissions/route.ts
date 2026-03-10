@@ -1,16 +1,13 @@
-// app/api/submissions/route.ts
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { authGuard } from "@/lib/authMiddleware";
 
-// POST – create a new submission (already existed in Sprint‑3)
 export async function POST(req: Request) {
   const err = await authGuard(req);
   if (err) return err;
 
   const { problemId, language, source } = await req.json();
 
-  // Create a pending submission in the DB
   const sub = await prisma.submission.create({
     data: {
       problemId,
@@ -20,28 +17,30 @@ export async function POST(req: Request) {
     },
   });
 
-  // Fire‑and‑forget to the Piston API (same logic you already used)
+  // fire‑and‑forget judge (same logic you already had)
   (async () => {
     try {
-      // Mark as RUNNING
       await prisma.submission.update({
         where: { id: sub.id },
         data: { status: "RUNNING" },
       });
 
-      // Call the thin wrapper that talks to Piston (lib/api.ts)
-      const exec = await fetch(`${process.env.NEXT_PUBLIC_PISTON_ENDPOINT}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          language,
-          version: "latest",
-          files: [{ name: "main", content: source }],
-          stdin: "", // could forward first test case if you want
-        }),
-      }).then((r) => r.json());
+      const exec = await fetch(
+        `${process.env.NEXT_PUBLIC_PISTON_ENDPOINT}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            language,
+            version: "latest",
+            files: [{ name: "main", content: source }],
+            stdin: "",
+          }),
+        }
+      ).then((r) => r.json());
 
-      const passed = exec.stdout.trim() === "EXPECTED_OUTPUT"; // you’ll replace with real logic
+      // Very naive correctness check – you’ll replace with proper test‑case matching later
+      const passed = exec.stdout?.trim() === "EXPECTED_OUTPUT";
 
       await prisma.submission.update({
         where: { id: sub.id },
@@ -53,7 +52,6 @@ export async function POST(req: Request) {
         },
       });
 
-      // Simple rating bump (optional, you can refine later)
       if (passed) {
         await prisma.user.update({
           where: { id: (req as any).auth.user.id },
@@ -63,7 +61,11 @@ export async function POST(req: Request) {
     } catch (e) {
       await prisma.submission.update({
         where: { id: sub.id },
-        data: { status: "FINISHED", verdict: "Error", output: String(e) },
+        data: {
+          status: "FINISHED",
+          verdict: "Error",
+          output: String(e),
+        },
       });
     }
   })();
@@ -71,7 +73,7 @@ export async function POST(req: Request) {
   return NextResponse.json({ submissionId: sub.id });
 }
 
-// GET – list submissions for the logged‑in user + optional problemId filter
+// GET – list submissions for the logged‑in user (optionally filtered by problem)
 export async function GET(req: Request) {
   const err = await authGuard(req);
   if (err) return err;
