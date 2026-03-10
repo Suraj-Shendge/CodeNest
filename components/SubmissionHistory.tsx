@@ -26,7 +26,7 @@ export default function SubmissionHistory({ problemId }: { problemId: string }) 
   const [subs, setSubs] = useState<Submission[] | null>(null);
 
   useEffect(() => {
-    if (!session?.user?.id) return; // not logged in → nothing to load
+    if (!session?.user?.id) return;
     fetch(`/api/submissions?problemId=${problemId}`)
       .then((r) => r.json())
       .then(setSubs)
